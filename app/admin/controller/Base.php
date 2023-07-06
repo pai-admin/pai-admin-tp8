@@ -63,7 +63,7 @@ class Base extends BaseController
             return;
         }
         // 验证权限
-        $flag = strtolower($this->method . ":" . $this->module . ":" . $this->controller . ":" . $this->action);
+        $flag = strtolower(uncamelize($this->method . ":" . $this->module . ":" . $this->controller . ":" . $this->action));
         $auth = Cache::store("redis")->get(config("app.token_key") . "AUTH:" . $account['accountId']);
         if (!$auth || !in_array($flag, $auth)) {
             self::result(Tools::CODE_NOAUTH, "权限不足");
@@ -128,8 +128,9 @@ class Base extends BaseController
             return;
         }
         // 获取操作信息
-        $title = Menu::getAuthTitle(strtolower($this->method . ":" . $this->module . ":" . $this->controller . ":" . $this->action));
+        $auth = strtolower(uncamelize($this->module . ":" . $this->controller . ":" . $this->action));
+        $title = Menu::getAuthTitle(strtolower($this->method . ":" . $auth));
         AccountLog::writeLog($this->account['accountId'], $this->account['username'], $title, strtoupper($this->method),
-            strtolower($this->module . ":" . $this->controller . ":" . $this->action), $ret['code'], json_encode($ret['data'], JSON_UNESCAPED_UNICODE));
+            $auth, $ret['code'], json_encode($ret, JSON_UNESCAPED_UNICODE));
     }
 }

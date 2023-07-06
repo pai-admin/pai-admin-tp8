@@ -3,6 +3,7 @@ namespace app;
 
 use think\db\exception\DataNotFoundException;
 use think\db\exception\ModelNotFoundException;
+use think\db\exception\PDOException;
 use think\exception\Handle;
 use think\exception\HttpException;
 use think\exception\HttpResponseException;
@@ -52,11 +53,11 @@ class ExceptionHandle extends Handle
     public function render($request, Throwable $e): Response
     {
         // 添加自定义异常处理机制
-        if ($e instanceof ValidateException) {
+        if ($e instanceof ValidateException || $e instanceof PDOException) {
             throw new HttpResponseException(\think\Response::create(['code' => Tools::CODE_FAIL, 'msg' => $e->getMessage()], 'json'));
         }
         if ($e->getMessage()) {
-            var_dump($e->getMessage());
+            var_dump($e);
         }
         // 其他错误交给系统处理
         return parent::render($request, $e);
