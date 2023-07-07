@@ -1,4 +1,5 @@
 <?php
+
 namespace app\admin\model;
 
 use app\Model;
@@ -7,7 +8,6 @@ use utils\Tools;
 /**
  * Author: cfn <cfn@leapy.cn>
  */
-
 class Account extends Model
 {
     /**
@@ -30,7 +30,7 @@ class Account extends Model
     static function getInfo(int $account_id)
     {
         return self::alias("a")
-            ->leftJoin("dept d","d.dept_id = a.dept_id")
+            ->leftJoin("dept d", "d.dept_id = a.dept_id")
             ->where('a.del_flag', 0)
             ->where("a.account_id", $account_id)
             ->field("a.account_id, a.username, a.avatar, d.dept_name")
@@ -143,5 +143,113 @@ class Account extends Model
             ->where("m.del_flag", 0)
             ->group("m.menu_id")
             ->column("CONCAT(m.method,':',m.flag) as auth"), "auth");
+    }
+
+    /**
+     * Author: cfn <cfn@leapy.cn>
+     * @param $where
+     * @return array
+     */
+    static function list($where): array
+    {
+        $model = self::alias("a")->where('a.del_flag', 0);
+
+        if ($where['deptId']) {
+            $model = $model->where("a.dept_id", $where['deptId']);
+        }
+
+        if ($where['username']) {
+            $model = $model->whereLike("a.username", "%$where[username]%");
+        }
+
+        $sModel = clone $model;
+        $count = $model->count();
+        $data = $sModel
+            ->page($where['page'], $where['limit'])
+            ->leftJoin("dept d", "d.dept_id = a.dept_id")
+            ->field("a.username, a.dept_id, a.status, a.account_id, a.avatar, a.update_time, a.create_time, d.dept_name")
+            ->order("a.account_id desc")
+            ->select()->each(function ($item){
+                $item['roles'] = AccountRole::getRoles($item['account_id']);
+                return $item;
+            })->toArray();
+        return compact("data", "count");
+    }
+
+    /**
+     * 修改
+     * Author: cfn <cfn@leapy.cn>
+     * @param array $param
+     * @return bool
+     */
+    static function edit(array $param): bool
+    {
+        $param = arrayUncamelize($param);
+        $param['update_time'] = date("Y-m-d H:i:s");
+        $roles = $param['roles'];
+        unset($param['roles']);
+
+        // 填写就是修改密码
+        if ($param['password']) {
+            $salt = Tools::randomString(6);
+            $param['password'] = md5($param['password'] . $salt);
+            $param['salt'] = $salt;
+        }
+
+        $res = (bool)(new self())->where('account_id', $param['account_id'])->where("del_flag", 0)->update($param);
+        if (!$res) {
+            return false;
+        }
+
+        // 删除原来的
+        AccountRole::where("account_id", $param['account_id'])->delete();
+        $accountRole = array();
+        foreach ($roles as $roleId) {
+            $accountRole[] = ['account_id' => $param['account_id'], 'role_id' => $roleId];
+        }
+        return AccountRole::insertAll($accountRole);
+    }
+
+    /**
+     * 删除
+     * Author: cfn <cfn@leapy.cn>
+     * @param mixed $ids
+     * @return bool
+     */
+    static function delByIds(mixed $ids)
+    {
+        return (bool)(new self())->where("del_flag", 0)
+            ->whereIn("account_id", $ids)
+            ->update([
+                'del_flag' => 1,
+                'update_time' => date("Y-m-d H:i:s")
+            ]);
+    }
+
+    /**
+     * 添加菜单
+     * Author: cfn <cfn@leapy.cn>
+     * @param array $param
+     * @return false|void
+     */
+    static function add(array $param)
+    {
+        $param = arrayUncamelize($param);
+        $param['create_time'] = date("Y-m-d H:i:s");
+        $roles = $param['roles'];
+        unset($param['roles']);
+        // 密码处理
+        if ($param['password']) {
+            $salt = Tools::randomString(6);
+            $param['password'] = md5($param['password'] . $salt);
+            $param['salt'] = $salt;
+        }
+        $accountId = self::insertGetId($param);
+        if (!$accountId) return false;
+        $accountRole = array();
+        foreach ($roles as $roleId) {
+            $accountRole[] = ['account_id' => $accountId, 'role_id' => $roleId];
+        }
+        return AccountRole::insertAll($accountRole);
     }
 }

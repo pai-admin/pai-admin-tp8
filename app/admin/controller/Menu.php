@@ -4,15 +4,10 @@
  */
 
 namespace app\admin\controller;
+use app\admin\model\Menu as mModel;
+use app\admin\validate\MenuReq;
 
-use app\admin\model\DictData as ddModel;
-use app\admin\validate\DictDataReq;
-
-/**
- * 字典项目
- * Author: cfn <cfn@leapy.cn>
- */
-class DictData extends Base
+class Menu extends Base
 {
     /**
      * 字典列表
@@ -21,13 +16,7 @@ class DictData extends Base
      */
     public function list()
     {
-        $where = $this->request->only([
-           'page' => 1,
-           'limit' => 10,
-           'typeId' => ''
-        ]);
-        $result = ddModel::list($where);
-        $this->success('字典项目列表', $result['data'], $result['count']);
+        $this->success('菜单列表', mModel::list());
     }
 
     /**
@@ -38,14 +27,14 @@ class DictData extends Base
     public function add()
     {
         $param = $this->request->only([
-            'typeId'=>0,'name','content','rank'=>1, 'status' => 1
+            'parentId'=>0,'title','remark','rank'=>1, 'type' => 1, 'method', 'flag', 'name', 'path', 'icon', 'hidden'
         ]);
         // 数据校验
-        validate(DictDataReq::class)->scene("add")->check($param);
+        validate(MenuReq::class)->scene("add")->check($param);
         $param = arrayUncamelize($param);
         $param['create_time'] = date("Y-m-d H:i:s");
-        $res = ddModel::insertGetId($param);
-        $res ? self::success('添加成功') : self::fail('添加失败');
+        $menuId = mModel::insertGetId($param);
+        $menuId ? self::success('添加成功', compact("menuId")) : self::fail('添加失败');
     }
 
     /**
@@ -56,11 +45,11 @@ class DictData extends Base
     public function edit()
     {
         $param = $this->request->only([
-            'typeId'=>0,'name','content','rank'=>1, 'status' => 1, 'dataId'
+            'parentId'=>0,'title','remark','rank'=>1, 'type' => 1, 'method', 'flag', 'name', 'path', 'icon', 'hidden', 'menuId'
         ]);
-        validate(DictDataReq::class)->check($param);
+        validate(MenuReq::class)->check($param);
         // 验证
-        $res = ddModel::edit($param);
+        $res = mModel::edit($param);
         $res ? self::success('添加成功') : self::fail('添加失败');
     }
 
@@ -73,7 +62,7 @@ class DictData extends Base
     {
         $ids = $this->request->param("ids");
         if (!$ids) self::fail("ID必传");
-        $res = ddModel::delByIds($ids);
+        $res = mModel::delByIds($ids);
         $res ? self::success('删除成功') : self::fail('删除失败');
     }
 }

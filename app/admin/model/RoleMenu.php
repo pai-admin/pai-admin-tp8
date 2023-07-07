@@ -9,5 +9,4 @@ use app\Model;
 
 class RoleMenu extends Model
 {
-
 }

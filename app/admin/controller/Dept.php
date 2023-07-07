@@ -5,14 +5,14 @@
 
 namespace app\admin\controller;
 
-use app\admin\model\DictData as ddModel;
-use app\admin\validate\DictDataReq;
+use app\admin\model\Dept as dModel;
+use app\admin\validate\DeptReq;
 
 /**
  * 字典项目
  * Author: cfn <cfn@leapy.cn>
  */
-class DictData extends Base
+class Dept extends Base
 {
     /**
      * 字典列表
@@ -22,12 +22,9 @@ class DictData extends Base
     public function list()
     {
         $where = $this->request->only([
-           'page' => 1,
-           'limit' => 10,
-           'typeId' => ''
+           'deptName' => ''
         ]);
-        $result = ddModel::list($where);
-        $this->success('字典项目列表', $result['data'], $result['count']);
+        $this->success('部门列表', dModel::list($where));
     }
 
     /**
@@ -38,13 +35,13 @@ class DictData extends Base
     public function add()
     {
         $param = $this->request->only([
-            'typeId'=>0,'name','content','rank'=>1, 'status' => 1
+            'parentId'=>0,'deptName','remark','rank'=>1, 'status' => 1
         ]);
         // 数据校验
-        validate(DictDataReq::class)->scene("add")->check($param);
+        validate(DeptReq::class)->scene("add")->check($param);
         $param = arrayUncamelize($param);
         $param['create_time'] = date("Y-m-d H:i:s");
-        $res = ddModel::insertGetId($param);
+        $res = dModel::insert($param);
         $res ? self::success('添加成功') : self::fail('添加失败');
     }
 
@@ -56,11 +53,11 @@ class DictData extends Base
     public function edit()
     {
         $param = $this->request->only([
-            'typeId'=>0,'name','content','rank'=>1, 'status' => 1, 'dataId'
+            'parentId'=>0,'deptName','remark','rank'=>1, 'status' => 1, 'deptId'
         ]);
-        validate(DictDataReq::class)->check($param);
+        validate(DeptReq::class)->check($param);
         // 验证
-        $res = ddModel::edit($param);
+        $res = dModel::edit($param);
         $res ? self::success('添加成功') : self::fail('添加失败');
     }
 
@@ -73,7 +70,7 @@ class DictData extends Base
     {
         $ids = $this->request->param("ids");
         if (!$ids) self::fail("ID必传");
-        $res = ddModel::delByIds($ids);
+        $res = dModel::delByIds($ids);
         $res ? self::success('删除成功') : self::fail('删除失败');
     }
 }

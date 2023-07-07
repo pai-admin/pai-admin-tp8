@@ -5,67 +5,66 @@
 
 namespace app\admin\controller;
 
-use app\admin\model\DictData as ddModel;
-use app\admin\validate\DictDataReq;
+use app\admin\model\Account as aModel;
+use app\admin\validate\AccountReq;
 
 /**
- * 字典项目
+ * 账号管理
  * Author: cfn <cfn@leapy.cn>
  */
-class DictData extends Base
+class Account extends Base
 {
     /**
-     * 字典列表
+     * 列表
      * Author: cfn <cfn@leapy.cn>
      * @return void
      */
     public function list()
     {
         $where = $this->request->only([
-           'page' => 1,
-           'limit' => 10,
-           'typeId' => ''
+            'username' => '',
+            'deptId' => '',
+            'page' => 1,
+            'limit' => 10,
         ]);
-        $result = ddModel::list($where);
-        $this->success('字典项目列表', $result['data'], $result['count']);
+        $result = aModel::list($where);
+        $this->success('账号列表', $result['data'], $result['count']);
     }
 
     /**
-     * 添加字典
+     * 添加
      * Author: cfn <cfn@leapy.cn>
      * @return void
      */
     public function add()
     {
         $param = $this->request->only([
-            'typeId'=>0,'name','content','rank'=>1, 'status' => 1
+            'username','password','status'=>1, 'avatar', 'deptId', 'roles'
         ]);
         // 数据校验
-        validate(DictDataReq::class)->scene("add")->check($param);
-        $param = arrayUncamelize($param);
-        $param['create_time'] = date("Y-m-d H:i:s");
-        $res = ddModel::insertGetId($param);
+        validate(AccountReq::class)->scene('add')->check($param);
+        $res = aModel::add($param);
         $res ? self::success('添加成功') : self::fail('添加失败');
     }
 
     /**
-     * 修改字典
+     * 修改
      * Author: cfn <cfn@leapy.cn>
      * @return void
      */
     public function edit()
     {
         $param = $this->request->only([
-            'typeId'=>0,'name','content','rank'=>1, 'status' => 1, 'dataId'
+            'username','password','status'=>1, 'avatar', 'deptId', 'accountId', 'roles'
         ]);
-        validate(DictDataReq::class)->check($param);
+        validate(AccountReq::class)->scene('edit')->check($param);
         // 验证
-        $res = ddModel::edit($param);
+        $res = aModel::edit($param);
         $res ? self::success('添加成功') : self::fail('添加失败');
     }
 
     /**
-     * 删除字典
+     * 删除
      * Author: cfn <cfn@leapy.cn>
      * @return void
      */
@@ -73,7 +72,7 @@ class DictData extends Base
     {
         $ids = $this->request->param("ids");
         if (!$ids) self::fail("ID必传");
-        $res = ddModel::delByIds($ids);
+        $res = aModel::delByIds($ids);
         $res ? self::success('删除成功') : self::fail('删除失败');
     }
 }

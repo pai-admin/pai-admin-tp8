@@ -2,6 +2,7 @@
 namespace app;
 
 use think\db\exception\DataNotFoundException;
+use think\db\exception\DbException;
 use think\db\exception\ModelNotFoundException;
 use think\db\exception\PDOException;
 use think\exception\Handle;
@@ -56,8 +57,11 @@ class ExceptionHandle extends Handle
         if ($e instanceof ValidateException || $e instanceof PDOException) {
             throw new HttpResponseException(\think\Response::create(['code' => Tools::CODE_FAIL, 'msg' => $e->getMessage()], 'json'));
         }
+        if ($e instanceof DbException || $e instanceof PDOException) {
+            throw new HttpResponseException(\think\Response::create(['code' => Tools::CODE_ERROR, 'msg' => $e->getMessage()], 'json'));
+        }
         if ($e->getMessage()) {
-            var_dump($e);
+            echo $e->getMessage();
         }
         // 其他错误交给系统处理
         return parent::render($request, $e);

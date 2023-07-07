@@ -65,7 +65,7 @@ class DictType extends Base
     public function del()
     {
         $ids = $this->request->param("ids");
-        if (!$ids) self::fail("字典ID必传");
+        if (!$ids) self::fail("ID必传");
         $res = dtModel::delByIds($ids);
         $res ? self::success('删除成功') : self::fail('删除失败');
     }
