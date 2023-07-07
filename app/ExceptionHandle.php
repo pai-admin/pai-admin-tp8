@@ -60,9 +60,6 @@ class ExceptionHandle extends Handle
         if ($e instanceof DbException || $e instanceof PDOException) {
             throw new HttpResponseException(\think\Response::create(['code' => Tools::CODE_ERROR, 'msg' => $e->getMessage()], 'json'));
         }
-        if ($e->getMessage()) {
-            echo $e->getMessage();
-        }
         // 其他错误交给系统处理
         return parent::render($request, $e);
     }
