@@ -175,7 +175,7 @@ class Index extends Base
         $file = request()->file("file");
         $size = $file->getSize();
         $path = "upload" . DIRECTORY_SEPARATOR . date("Y") . DIRECTORY_SEPARATOR . date("m") . DIRECTORY_SEPARATOR . date("d");
-        $name = md5_file($file) . "." . $file->getOriginalExtension();
+        $name = md5(md5_file($file) . time()) . "." . $file->getOriginalExtension();
         $path = Filesystem::disk('public')->putFileAs($path, $file, $name);
         // 上传到本地服务器
         self::success('文件上传', compact("size", "name", "path"));
