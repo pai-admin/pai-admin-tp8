@@ -20,6 +20,7 @@ Route::post("logout","index/logout");
 Route::post("editPwd","index/editPwd");
 Route::post("info/edit","index/editInfo");
 Route::get("log/my","index/myLog");
+Route::post("upload/file","index/upload");
 
 // 日志操作
 Route::get("log/list","log/list");

@@ -5,9 +5,9 @@ namespace app\admin\controller;
 use app\admin\model\Account;
 use app\admin\model\AccountLog;
 use app\admin\validate\EditPwdReq;
-use app\Response;
 use MathCaptcha\Captcha;
 use think\facade\Cache;
+use think\facade\Filesystem;
 use utils\Tools;
 use app\admin\validate\LoginReq;
 
@@ -16,7 +16,7 @@ use app\admin\validate\LoginReq;
  */
 class Index extends Base
 {
-    protected $noNeedLogin = ["getCode","login"];
+    protected $noNeedLogin = ["getCode", "login"];
     protected $noNeedAuth = ['*'];
 
     /**
@@ -58,19 +58,19 @@ class Index extends Base
         // 验证一次
         Cache::store("redis")->delete(config("app.token_key") . $param['verifyId']);
         // 查询账号
-        $account = Account::getByUsername($param['username'],"account_id,username,password,salt,status");
+        $account = Account::getByUsername($param['username'], "account_id,username,password,salt,status");
         if (empty($account)) self::fail("用户名或者密码错误");
-        if (md5($param['password'].$account['salt']) != $account['password']) self::fail("用户名或者密码错误");
+        if (md5($param['password'] . $account['salt']) != $account['password']) self::fail("用户名或者密码错误");
         if ($account['status'] != 1) self::fail("账号已停用");
         // 生成token
         $token = Tools::makeToken();
         Cache::store("redis")->set(config("app.token_key") . $token, $account, config("app.token_ttl"));
         // 登录记录日志
-        AccountLog::writeLog($account['accountId'], $account['username'], "管理员登录", $this->method,"login",200);
+        AccountLog::writeLog($account['accountId'], $account['username'], "管理员登录", $this->method, "login", 200);
         // 缓存权限
         $apis = Account::getApis($account['accountId']);
         Cache::store("redis")->set(config("app.token_key") . "AUTH:" . $account['accountId'], $apis);
-        self::success('登录成功', ['token'=>$token]);
+        self::success('登录成功', ['token' => $token]);
     }
 
     /**
@@ -162,5 +162,22 @@ class Index extends Base
         $param['accountId'] = $this->account['accountId'];
         $result = AccountLog::getLog($param);
         self::success("个人日志", $result['data'], $result['count']);
+    }
+
+    /**
+     * 文件上传
+     * Author: cfn <cfn@leapy.cn>
+     * @return void
+     */
+    public function upload()
+    {
+        // 获取表单上传文件
+        $file = request()->file("file");
+        $size = $file->getSize();
+        $path = "upload" . DIRECTORY_SEPARATOR . date("Y") . DIRECTORY_SEPARATOR . date("m") . DIRECTORY_SEPARATOR . date("d");
+        $name = md5_file($file) . "." . $file->getOriginalExtension();
+        $path = Filesystem::disk('public')->putFileAs($path, $file, $name);
+        // 上传到本地服务器
+        self::success('文件上传', compact("size", "name", "path"));
     }
 }
